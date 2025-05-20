@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Mouse Tracker</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .cursor {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.05s linear;
+    }
+  </style>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body>
+
+  <script>
+    const socket = io();
+    const cursors = {};  // sid: div
+    const colors = {};   // sid: color
+
+    // Emit own mouse position
+    document.addEventListener('mousemove', (e) => {
+      socket.emit('mouse_move', { x: e.clientX, y: e.clientY });
+    });
+
+    // Add a new user's cursor
+    socket.on('user_joined', function (data) {
+      const sid = data.sid;
+      const color = data.color;
+      if (!cursors[sid]) {
+        const cursor = document.createElement('div');
+        cursor.classList.add('cursor');
+        cursor.style.backgroundColor = color;
+        document.body.appendChild(cursor);
+        cursors[sid] = cursor;
+        colors[sid] = color;
+      }
+    });
+
+    // Remove a user's cursor on disconnect
+    socket.on('user_left', function (data) {
+      const sid = data.sid;
+      if (cursors[sid]) {
+        cursors[sid].remove();
+        delete cursors[sid];
+        delete colors[sid];
+      }
+    });
+
+    // Update cursor position
+    socket.on('mouse_update', function (data) {
+      const sid = data.sid;
+      const x = data.x;
+      const y = data.y;
+
+      if (!cursors[sid]) {
+        const cursor = document.createElement('div');
+        cursor.classList.add('cursor');
+        cursor.style.backgroundColor = colors[sid] || "#000";
+        document.body.appendChild(cursor);
+        cursors[sid] = cursor;
+      }
+
+      cursors[sid].style.transform = `translate(${x}px, ${y}px)`;
+    });
+  </script>
+
+</body>
+
+</html>
