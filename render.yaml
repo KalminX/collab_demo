@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: flask-mouse-tracker
+    env: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
